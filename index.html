@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Teman Fokus</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#eef3f1; --surface:#ffffff; --ink:#16302b; --muted:#5d7570; --line:#d3e0dc;
+  --accent:#2f5bea; --accent-ink:#ffffff; --sun:#f2c94c; --ring-track:#d9e4e0;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0f1e1b; --surface:#172a26; --ink:#e6f1ee; --muted:#93aea8; --line:#2a423c;
+    --accent:#7d9bff; --accent-ink:#0f1e1b; --sun:#f2c94c; --ring-track:#26403a;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0f1e1b; --surface:#172a26; --ink:#e6f1ee; --muted:#93aea8; --line:#2a423c;
+  --accent:#7d9bff; --accent-ink:#0f1e1b; --sun:#f2c94c; --ring-track:#26403a;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:"Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  line-height:1.5; min-height:100vh;
+}
+main{max-width:30rem; margin:0 auto; padding:1.25rem 1.1rem 3rem}
+h1{font-size:1.5rem; font-weight:800; margin:.2rem 0 .1rem; letter-spacing:-.01em}
+.sub{color:var(--muted); margin:0 0 1.4rem}
+.timer{
+  background:var(--surface); border:1px solid var(--line); border-radius:1.6rem;
+  padding:1.4rem 1rem 1.2rem; text-align:center;
+}
+.modes{display:inline-flex; gap:.3rem; background:var(--bg); padding:.25rem; border-radius:999px; margin-bottom:1rem}
+.modes button{
+  border:0; background:transparent; color:var(--muted); font:inherit; font-weight:600;
+  padding:.45rem .95rem; border-radius:999px; cursor:pointer;
+}
+.modes button[aria-pressed="true"]{background:var(--accent); color:var(--accent-ink)}
+.ring{position:relative; width:min(15rem,70vw); aspect-ratio:1; margin:0 auto}
+.ring svg{width:100%; height:100%; transform:rotate(-90deg)}
+.ring circle{fill:none; stroke-width:10; stroke-linecap:round}
+.ring .track{stroke:var(--ring-track)}
+.ring .bar{stroke:var(--accent); transition:stroke-dashoffset .4s linear}
+.time{
+  position:absolute; inset:0; display:grid; place-items:center;
+  font-size:clamp(2.6rem,13vw,3.6rem); font-weight:800; font-variant-numeric:tabular-nums; letter-spacing:-.02em;
+}
+.ctrl{display:flex; gap:.6rem; justify-content:center; margin-top:1.1rem}
+.btn{
+  font:inherit; font-weight:600; border-radius:999px; padding:.7rem 1.6rem; cursor:pointer;
+  border:1px solid var(--line); background:var(--surface); color:var(--ink);
+}
+.btn.primary{background:var(--accent); color:var(--accent-ink); border-color:var(--accent); min-width:7.5rem}
+.btn:focus-visible,.modes button:focus-visible,input:focus-visible,.del:focus-visible,.chk:focus-visible{outline:3px solid var(--sun); outline-offset:2px}
+.count{margin:.9rem 0 0; color:var(--muted); font-size:.95rem}
+h2{font-size:1.15rem; margin:2rem 0 .7rem}
+.add{display:flex; gap:.5rem}
+.add input{
+  flex:1; min-width:0; font:inherit; padding:.7rem .95rem; border-radius:.9rem;
+  border:1px solid var(--line); background:var(--surface); color:var(--ink);
+}
+ul{list-style:none; margin:.8rem 0 0; padding:0}
+li{
+  display:flex; align-items:center; gap:.7rem; background:var(--surface);
+  border:1px solid var(--line); border-radius:.9rem; padding:.65rem .8rem; margin-bottom:.5rem;
+}
+.chk{
+  width:1.5rem; height:1.5rem; flex:none; border-radius:.45rem; border:2px solid var(--muted);
+  background:transparent; color:var(--accent-ink); cursor:pointer; display:grid; place-items:center; padding:0; font-size:.9rem;
+}
+li.done .chk{background:var(--accent); border-color:var(--accent)}
+li .t{flex:1; overflow-wrap:anywhere}
+li.done .t{text-decoration:line-through; color:var(--muted)}
+.del{border:0; background:transparent; color:var(--muted); font-size:1.3rem; cursor:pointer; padding:.1rem .45rem; border-radius:.5rem}
+.empty{color:var(--muted); text-align:center; padding:1rem 0}
+.theme{float:right; margin-top:.4rem; font-size:.9rem; padding:.4rem .9rem}
+@media (prefers-reduced-motion: reduce){.ring .bar{transition:none}}
+</style>
+</head>
+<body>
+<main>
+  <button class="btn theme" id="theme" type="button" aria-label="Ganti tema">Tema</button>
+  <h1>Teman Fokus</h1>
+  <p class="sub">Atur waktu kerja, catat tugas, selesaikan satu per satu.</p>
+
+  <section class="timer" aria-label="Timer fokus">
+    <div class="modes" role="group" aria-label="Pilih mode">
+      <button type="button" data-min="25" aria-pressed="true">Fokus</button>
+      <button type="button" data-min="5" aria-pressed="false">Istirahat</button>
+      <button type="button" data-min="15" aria-pressed="false">Santai</button>
+    </div>
+    <div class="ring">
+      <svg viewBox="0 0 100 100" aria-hidden="true">
+        <circle class="track" cx="50" cy="50" r="44"></circle>
+        <circle class="bar" id="bar" cx="50" cy="50" r="44"></circle>
+      </svg>
+      <div class="time" id="time" role="timer" aria-live="off">25:00</div>
+    </div>
+    <div class="ctrl">
+      <button class="btn primary" id="start" type="button">Mulai</button>
+      <button class="btn" id="reset" type="button">Ulangi</button>
+    </div>
+    <p class="count" id="count">Sesi fokus selesai hari ini: 0</p>
+  </section>
+
+  <h2>Daftar tugas</h2>
+  <div class="add">
+    <input id="in" type="text" placeholder="Tulis tugas baru" maxlength="80" autocomplete="off" enterkeyhint="done">
+    <button class="btn primary" id="addBtn" type="button" style="min-width:0">Tambah</button>
+  </div>
+  <ul id="list"></ul>
+</main>
+
+<script>
+(function(){
+  var C = 2 * Math.PI * 44;
+  var bar = document.getElementById('bar');
+  bar.style.strokeDasharray = C;
+  var timeEl = document.getElementById('time');
+  var startBtn = document.getElementById('start');
+  var countEl = document.getElementById('count');
+  var total = 25 * 60, left = total, timer = null, mode = 'Fokus', sessions = 0;
+  var tasks = [];
+
+  function load(k, d){ try{ var v = localStorage.getItem(k); return v ? JSON.parse(v) : d; }catch(e){ return d; } }
+  function save(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+
+  tasks = load('ff-tasks', []);
+  var today = new Date().toDateString();
+  var s = load('ff-sessions', {d:today, n:0});
+  sessions = s.d === today ? s.n : 0;
+
+  function fmt(n){ return (n < 10 ? '0' : '') + n; }
+  function draw(){
+    timeEl.textContent = fmt(Math.floor(left / 60)) + ':' + fmt(left % 60);
+    bar.style.strokeDashoffset = C * (1 - left / total);
+    countEl.textContent = 'Sesi fokus selesai hari ini: ' + sessions;
+    document.title = (timer ? timeEl.textContent + ' · ' : '') + 'Teman Fokus';
+  }
+  function stop(){ clearInterval(timer); timer = null; startBtn.textContent = 'Mulai'; }
+  function beep(){
+    try{
+      var a = new (window.AudioContext || window.webkitAudioContext)();
+      var o = a.createOscillator(), g = a.createGain();
+      o.connect(g); g.connect(a.destination); o.frequency.value = 660; g.gain.value = .15;
+      o.start(); o.stop(a.currentTime + .35);
+    }catch(e){}
+    if(navigator.vibrate){ try{ navigator.vibrate([200,100,200]); }catch(e){} }
+  }
+  function tick(){
+    left--;
+    if(left <= 0){
+      left = 0; stop(); beep();
+      if(mode === 'Fokus'){ sessions++; save('ff-sessions', {d:today, n:sessions}); }
+      draw(); return;
+    }
+    draw();
+  }
+  startBtn.addEventListener('click', function(){
+    if(timer){ stop(); }
+    else{
+      if(left === 0) left = total;
+      startBtn.textContent = 'Jeda';
+      timer = setInterval(tick, 1000);
+    }
+    draw();
+  });
+  document.getElementById('reset').addEventListener('click', function(){ stop(); left = total; draw(); });
+  var modeBtns = document.querySelectorAll('.modes button');
+  modeBtns.forEach(function(b){
+    b.addEventListener('click', function(){
+      modeBtns.forEach(function(x){ x.setAttribute('aria-pressed', 'false'); });
+      b.setAttribute('aria-pressed', 'true');
+      mode = b.textContent; total = left = parseInt(b.dataset.min, 10) * 60;
+      stop(); draw();
+    });
+  });
+
+  var list = document.getElementById('list');
+  var input = document.getElementById('in');
+  function render(){
+    list.innerHTML = '';
+    if(!tasks.length){
+      var e = document.createElement('li'); e.className = 'empty';
+      e.style.cssText = 'display:block;border:0;background:none';
+      e.textContent = 'Belum ada tugas. Tulis satu di atas.';
+      list.appendChild(e); return;
+    }
+    tasks.forEach(function(t, i){
+      var li = document.createElement('li'); if(t.done) li.className = 'done';
+      var c = document.createElement('button'); c.className = 'chk'; c.type = 'button';
+      c.setAttribute('aria-label', (t.done ? 'Batalkan selesai: ' : 'Tandai selesai: ') + t.text);
+      c.textContent = t.done ? '✓' : '';
+      c.onclick = function(){ tasks[i].done = !tasks[i].done; save('ff-tasks', tasks); render(); };
+      var sp = document.createElement('span'); sp.className = 't'; sp.textContent = t.text;
+      var d = document.createElement('button'); d.className = 'del'; d.type = 'button';
+      d.setAttribute('aria-label', 'Hapus tugas: ' + t.text); d.textContent = '×';
+      d.onclick = function(){ tasks.splice(i, 1); save('ff-tasks', tasks); render(); };
+      li.appendChild(c); li.appendChild(sp); li.appendChild(d); list.appendChild(li);
+    });
+  }
+  function add(){
+    var v = input.value.trim(); if(!v) return;
+    tasks.unshift({text:v, done:false}); input.value = '';
+    save('ff-tasks', tasks); render();
+  }
+  document.getElementById('addBtn').addEventListener('click', add);
+  input.addEventListener('keydown', function(e){ if(e.key === 'Enter') add(); });
+
+  document.getElementById('theme').addEventListener('click', function(){
+    var r = document.documentElement;
+    var dark = r.dataset.theme ? r.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+    r.dataset.theme = dark ? 'light' : 'dark';
+  });
+
+  render(); draw();
+})();
+</script>
+</body>
+</html>
